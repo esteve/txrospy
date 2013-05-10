@@ -1,4 +1,4 @@
-txrospy
+txROSpy
 =======
 
-Twisted implementation of the ROS protocols
+txROSpy project provides implementations of the ROS protocols (publisher, subscriber, service and client) suitable for their use in Twisted asynchronous applications.
