@@ -1,4 +1,5 @@
 from twisted.application import service, internet
+from twisted.internet import defer, reactor
 
 import txrospy
 from beginner_tutorials.srv import AddTwoInts, AddTwoIntsResponse
@@ -17,7 +18,12 @@ rpc_uri = 'rosrpc://%s:%d' % (hostname, ros_rpc_port)
 
 def handler(req):
     print "Adding a (%d) and b (%d)" % (req.a, req.b)
-    return AddTwoIntsResponse(req.a + req.b)
+    response = AddTwoIntsResponse(req.a + req.b)
+    d = defer.Deferred()
+    # Simulate a long-running computation
+    reactor.callLater(1.0, d.callback, response)
+    return d
+
 
 application = service.Application('txrospy')
 f = txrospy.ROSService(handler, AddTwoInts, server, ros_service, rpc_uri,

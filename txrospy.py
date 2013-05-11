@@ -92,13 +92,16 @@ class ROSServerProtocol(basic.IntNStringReceiver):
         elif self.state == State.WAIT:
             request = self.factory.service_class._request_class()
             request.deserialize(message)
-            response = self.factory.handler(request)
-            s = StringIO()
-            response.serialize(s)
-            v = s.getvalue()
-            out = struct.pack('<B', 1) + struct.pack(self.structFormat,
-                len(v)) + v
-            self.transport.write(out)
+            d = defer.maybeDeferred(self.factory.handler, request)
+            d.addCallback(self._write_response)
+
+    def _write_response(self, response):
+        s = StringIO()
+        response.serialize(s)
+        v = s.getvalue()
+        out = struct.pack('<B', 1) + struct.pack(self.structFormat,
+            len(v)) + v
+        self.transport.write(out)
 
 
 class ROSClientFactory(protocol.ClientFactory):
