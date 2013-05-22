@@ -7,7 +7,7 @@ from twisted.web import server
 
 from std_msgs.msg import String
 
-import txrospy
+from txrospy import protocol
 
 # Run this a twistd plugin
 # E.g. twistd -ny txrospy_listener
@@ -36,7 +36,7 @@ topic_type = String._type
 application = service.Application('txrospy')
 serviceCollection = service.IServiceCollection(application)
 
-s = txrospy.ROSSubscriber('txrospy_listener', handler, topic, topic_type,
+s = protocol.ROSSubscriber('txrospy_listener', handler, topic, topic_type,
     caller_api)
 s.setServiceParent(serviceCollection)
 
@@ -44,7 +44,7 @@ s.setServiceParent(serviceCollection)
 @defer.inlineCallbacks
 def registered(res):
     publishers = res[-1]
-    r = txrospy.ROSSubscriberSlaveAPI(hostname, ros_rpc_port, name,
+    r = protocol.ROSSubscriberSlaveAPI(hostname, ros_rpc_port, name,
         topic, String, handler)
     try:
         yield r.connect_to_publishers(publishers)

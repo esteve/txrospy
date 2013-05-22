@@ -134,11 +134,14 @@ class ROSMethodProxy(object):
             from twisted.internet import reactor
             self.reactor = reactor
 
+    def build_factory(self):
+        return self.factory()
+
     @defer.inlineCallbacks
     def call(self, *params):
         '''Encode the method params and issue a request to the service.'''
         point = TCP4ClientEndpoint(self.reactor, self.hostname, self.port)
-        factory = self.factory()
+        factory = self.build_factory()
         p = yield point.connect(factory)
 
         header = self.protocol.get_header_fields()
@@ -197,6 +200,9 @@ class ROSClient(object):
             self.headers['persistent'] = '1'
         self.service_class = service_class
 
+    def build_factory(self):
+        return self.factory()
+
     @defer.inlineCallbacks
     def probe(self, scheme, hostname, port):
         '''Check that the endpoint is reponding to our requests.
@@ -210,7 +216,7 @@ class ROSClient(object):
         header = {'probe': '1', 'md5sum': '*', 'callerid': self.caller_id,
             'service': self.resolved_name}
         point = self.build_endpoint(hostname, port)
-        factory = self.factory()
+        factory = self.build_factory()
         p = yield point.connect(factory)
         p.send_header(header)
         # TODO: check response
@@ -291,8 +297,6 @@ class ROSService(service.Service):
     @ivar caller_api: The local XML-RPC endpoint.
     '''
 
-    factory = ROSServerFactory
-
     def __init__(self, handler, service_class, name, ros_service, rpc_uri,
         caller_api, ros_master_uri=None):
         if ros_master_uri is None:
@@ -315,9 +319,12 @@ class ROSService(service.Service):
         L{ServerFactory}.
         '''
         yield self.register_service()
-        factory = self.factory(self.handler, self.service_class,
-            self.resolved_name, self.caller_id)
+        factory = self.build_factory()
         defer.returnValue(factory)
+
+    def build_factory(self):
+        return ROSServerFactory(self.handler, self.service_class,
+            self.resolved_name, self.caller_id)
 
     def register_service(self):
         '''Register ourselves to the ROS Master.'''

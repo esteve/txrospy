@@ -1,7 +1,7 @@
 from twisted.application import service, internet
 from twisted.internet import defer, reactor
 
-import txrospy
+from txrospy import protocol
 from beginner_tutorials.srv import AddTwoInts, AddTwoIntsResponse
 
 # Run this as a twistd plugin
@@ -26,7 +26,7 @@ def handler(req):
 
 
 application = service.Application('txrospy')
-f = txrospy.ROSService(handler, AddTwoInts, server, ros_service, rpc_uri,
+f = protocol.ROSService(handler, AddTwoInts, server, ros_service, rpc_uri,
     caller_api)
 serviceCollection = service.IServiceCollection(application)
 

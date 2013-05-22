@@ -1,8 +1,10 @@
 from twisted.application import service, internet
 from twisted.internet import defer, reactor
 
-import txrospy
-from beginner_tutorials.srv import AddTwoInts, AddTwoIntsResponse
+from txrospy import protocol_thrift
+from beginner_tutorials.thrift_twisted.AddTwoInts import AddTwoInts
+import zope
+
 
 # Run this as a twistd plugin
 # E.g. twistd -ny txrospy_server.py
@@ -13,21 +15,25 @@ ros_rpc_port = 12345
 xml_rpc_port = 58260
 hostname = 'precise32'
 caller_api = 'http://%s:%d/' % (hostname, xml_rpc_port)
-rpc_uri = 'rosrpc://%s:%d' % (hostname, ros_rpc_port)
+rpc_uri = 'thriftrpc://%s:%d' % (hostname, ros_rpc_port)
 
 
-def handler(req):
-    print "Adding a (%d) and b (%d)" % (req.a, req.b)
-    response = AddTwoIntsResponse(req.a + req.b)
+class AddTwoIntsHandler(object):
+  zope.interface.implements(AddTwoInts.Iface)
+
+  def add(self, a, b):
+    print "Adding a (%d) and b (%d)" % (a, b)
+    response = a + b
     d = defer.Deferred()
     # Simulate a long-running computation
     reactor.callLater(1.0, d.callback, response)
     return d
 
+handler = AddTwoInts.Processor(AddTwoIntsHandler())
 
 application = service.Application('txrospy')
-f = txrospy.ROSService(handler, AddTwoInts, server, ros_service, rpc_uri,
-    caller_api)
+f = protocol_thrift.ThriftROSService(handler, AddTwoInts, server, ros_service,
+    rpc_uri, caller_api)
 serviceCollection = service.IServiceCollection(application)
 
 
