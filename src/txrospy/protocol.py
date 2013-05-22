@@ -120,14 +120,13 @@ class ROSMethodProxy(object):
     @ivar port: The C{int} remote port.
     '''
 
-    factory = ROSClientFactory
-
-    def __init__(self, service_class, protocol, hostname, port,
+    def __init__(self, service_class, protocol, hostname, port, factory,
         reactor=None):
         self.service_class = service_class
         self.protocol = protocol
         self.hostname = hostname
         self.port = port
+        self.factory = factory
 
         if reactor:
             self.reactor = reactor
@@ -220,7 +219,7 @@ class ROSClient(object):
         protocol = tcpros_service.TCPROSServiceClient(self.resolved_name,
             self.service_class, headers=self.headers)
         method = self.method_proxy(self.service_class, protocol, hostname,
-            port)
+            port, self.factory)
         defer.returnValue(method)
 
     def build_endpoint(self, hostname, port):
