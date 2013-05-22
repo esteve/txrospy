@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from twisted.application import service, internet
 from twisted.internet import defer, reactor
 
