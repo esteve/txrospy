@@ -120,6 +120,8 @@ class ROSMethodProxy(object):
     @ivar port: The C{int} remote port.
     '''
 
+    factory = ROSClientFactory
+
     def __init__(self, service_class, protocol, hostname, port,
         reactor=None):
         self.service_class = service_class
@@ -137,7 +139,7 @@ class ROSMethodProxy(object):
     def call(self, *params):
         '''Encode the method params and issue a request to the service.'''
         point = TCP4ClientEndpoint(self.reactor, self.hostname, self.port)
-        factory = ROSClientFactory()
+        factory = self.factory()
         p = yield point.connect(factory)
 
         header = self.protocol.get_header_fields()
@@ -173,6 +175,9 @@ class ROSClient(object):
     @ivar caller_api: The local XML-RPC endpoint.
     '''
 
+    method_proxy = ROSMethodProxy
+    factory = ROSClientFactory
+
     def __init__(self, service, caller_id, service_class, ros_master_uri=None,
         reactor=None, persistent=False, headers=None):
         self.resolved_name = rospy.names.resolve_name(service)
@@ -206,7 +211,7 @@ class ROSClient(object):
         header = {'probe': '1', 'md5sum': '*', 'callerid': self.caller_id,
             'service': self.resolved_name}
         point = self.build_endpoint(hostname, port)
-        factory = self.build_factory()
+        factory = self.factory()
         p = yield point.connect(factory)
         p.send_header(header)
         # TODO: check response
@@ -214,17 +219,13 @@ class ROSClient(object):
 
         protocol = tcpros_service.TCPROSServiceClient(self.resolved_name,
             self.service_class, headers=self.headers)
-        method = ROSMethodProxy(self.service_class, protocol, hostname,
+        method = self.method_proxy(self.service_class, protocol, hostname,
             port)
         defer.returnValue(method)
 
     def build_endpoint(self, hostname, port):
         '''Factory method to build a low level transport endpoint'''
         return TCP4ClientEndpoint(self.reactor, hostname, port)
-
-    def build_factory(self):
-        '''Factory method to build a suitable ROS client factory'''
-        return ROSClientFactory()
 
     def lookup_service(self):
         '''Check if the service has been registered on the ROS Master'''
@@ -291,6 +292,8 @@ class ROSService(service.Service):
     @ivar caller_api: The local XML-RPC endpoint.
     '''
 
+    factory = ROSServerFactory
+
     def __init__(self, handler, service_class, name, ros_service, rpc_uri,
         caller_api, ros_master_uri=None):
         if ros_master_uri is None:
@@ -313,7 +316,7 @@ class ROSService(service.Service):
         L{ServerFactory}.
         '''
         yield self.register_service()
-        factory = ROSServerFactory(self.handler, self.service_class,
+        factory = self.factory(self.handler, self.service_class,
             self.resolved_name, self.caller_id)
         defer.returnValue(factory)
 
