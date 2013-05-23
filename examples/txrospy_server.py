@@ -22,7 +22,7 @@ def handler(req):
     response = AddTwoIntsResponse(req.a + req.b)
     d = defer.Deferred()
     # Simulate a long-running computation
-    reactor.callLater(1.0, d.callback, response)
+    reactor.callLater(0.1, d.callback, response)
     return d
 
 
