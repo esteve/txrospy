@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from twisted.internet import defer, reactor
 
 from txrospy import protocol
